@@ -1,8 +1,9 @@
 import asyncio
 import aiohttp
+import json
 from bs4 import BeautifulSoup
 
-async def get_season_data(session, season):
+async def get_season_data(session, season, episodes):
     season_number = season.find(class_='title').text.split(' ')[1]
     chapters = season.find_all('li')
 
@@ -19,13 +20,15 @@ async def get_season_data(session, season):
             resume_paragraph = episode_web_content.find(id='info').find('div').find('p')
             resume = resume_paragraph.text if resume_paragraph else 'No description available' 
 
-        print('#' * 60)
-        print(f'Season {season_number}')
-        print(episode)
-        print(title)
-        print(date)
-        print(url)
-        print(resume)
+        episode_dict = {
+            'season': f'Season {season_number}',
+            'episode': episode,
+            'title': title,
+            'resume': resume,
+            'date': date,
+            'url': url
+        }
+        episodes.append(episode_dict)
 
 async def main():
     async with aiohttp.ClientSession() as session:
@@ -35,8 +38,12 @@ async def main():
                     raise Exception('Error: response.status_code differs from 200')
                 main_web_content = BeautifulSoup(await response.text(), 'lxml')
                 seasons_data = main_web_content.find_all(class_='se-c')
-                coroutines = [get_season_data(session, season) for season in seasons_data]
+                episodes = []
+                coroutines = [get_season_data(session, season, episodes) for season in seasons_data]
                 await asyncio.gather(*coroutines)
+
+                with open('simpsons_episodes.json', 'w') as file_open:
+                    json.dump(episodes, file_open, indent=4)
             except Exception as e:
                 print(e)
 
