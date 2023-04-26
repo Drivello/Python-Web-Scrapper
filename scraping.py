@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 
 load_dotenv()
 SIMPSONS_URL = os.getenv('SIMPSONS_URL')
+SIMPSONS_FILE_NAME = os.getenv('SIMPSONS_FILE_NAME')
 
 async def get_season_data(session, season, scrapped_episodes):
     season_number = season.find(class_='title').text.split(' ')[1]
@@ -57,7 +58,7 @@ async def main():
                 coroutines = [get_season_data(session, season, scrapped_episodes) for season in seasons_data]
                 await asyncio.gather(*coroutines)
 
-                with open('simpsons_episodes.json', 'w') as file_open:
+                with open(SIMPSONS_FILE_NAME+'.json', 'w') as file_open:
                     json.dump(scrapped_episodes, file_open, indent=4)
             except Exception as e:
                 print(e)
