@@ -11,4 +11,5 @@ with open(SIMPSONS_FILE_NAME+'.json') as f:
 
 random_episode = random.choice(data)
 
-print(random_episode)
+print(f"Capítulo {random_episode['season']}x{random_episode['episode']}: {random_episode['title']}")
+print(f"Miralo en: {random_episode['url']}")
