@@ -4,10 +4,14 @@ import json
 import os
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
+import logging
 
 load_dotenv()
 SIMPSONS_URL = os.getenv('SIMPSONS_URL')
-SIMPSONS_FILE_NAME = os.getenv('SIMPSONS_FILE_NAME')
+SIMPSONS_FILE_NAME = 'scrapper/' + os.getenv('SIMPSONS_FILE_NAME') + '.json'
+SCRAPPER_LOG = 'scrapper/' + os.getenv('SCRAPPER_LOG') + '.log'
+
+logging.basicConfig(filename= SCRAPPER_LOG, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
 async def get_season_data(session, season, scrapped_episodes):
     season_number = season.find(class_='title').text.split(' ')[1]
@@ -33,7 +37,7 @@ async def get_season_data(session, season, scrapped_episodes):
 
         async with session.get(url) as response:
             check_response(response)
-            episode_web_content = get_soup(response)
+            episode_web_content = await get_soup(response)
             resume_found = episode_web_content.find(id='info').find('div').find('p')
             resume = resume_found.text if resume_found else 'No description available' 
 
@@ -46,22 +50,24 @@ async def get_season_data(session, season, scrapped_episodes):
             'url': url
         }
         scrapped_episodes.append(episode_info)
+        logging.info(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
 
 async def main():
     async with aiohttp.ClientSession() as session:
         async with session.get(SIMPSONS_URL) as response:
             try: 
                 check_response(response)
-                main_web_content = get_soup(response)
+                main_web_content = await get_soup(response)
                 seasons_data = main_web_content.find_all(class_='se-c')
                 scrapped_episodes = []
                 coroutines = [get_season_data(session, season, scrapped_episodes) for season in seasons_data]
                 await asyncio.gather(*coroutines)
 
-                with open(SIMPSONS_FILE_NAME+'.json', 'w') as file_open:
+                with open(SIMPSONS_FILE_NAME, 'w') as file_open:
                     json.dump(scrapped_episodes, file_open, indent=4)
+                    logging.info(f"Data written to {SIMPSONS_FILE_NAME}")
             except Exception as e:
-                print(e)
+                logging.error(str(e))
 
 def check_response(response):
     if not response.ok:

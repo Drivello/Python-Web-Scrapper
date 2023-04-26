@@ -1,2 +1,2 @@
 .env
-simpsons_episodes.json
+scrapper/**.*
