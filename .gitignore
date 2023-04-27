@@ -1,2 +1,7 @@
 .env
+.vscode
 scrapper/**.*
+__pycache__/**.*
+.pytest_cache/**.*
+test/__pycache__/**.*
+test/.pytest_cache/**.*
