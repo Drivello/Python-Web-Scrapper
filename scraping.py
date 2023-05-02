@@ -10,8 +10,8 @@ import logging
 
 load_dotenv()
 SIMPSONS_URL = os.getenv('SIMPSONS_URL')
-SIMPSONS_FILE_NAME = os.path.dirname(os.path.abspath(__file__))+'/scrapper/' + os.getenv('SIMPSONS_FILE_NAME') + '.json'
-SCRAPPER_LOG = os.path.dirname(os.path.abspath(__file__))+'/scrapper/' + os.getenv('SCRAPPER_LOG') + '.log'
+SIMPSONS_FILE_NAME = os.path.dirname(os.path.abspath(__file__))+'/data/' + os.getenv('SIMPSONS_FILE_NAME') + '.json'
+SCRAPPER_LOG = os.path.dirname(os.path.abspath(__file__))+'/data/' + os.getenv('SCRAPPER_LOG') + '.log'
 
 logging.basicConfig(filename= SCRAPPER_LOG, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -49,6 +49,7 @@ async def get_season_data(session, season, scrapped_episodes):
         }
         scrapped_episodes.append(episode_info)
         logging.info(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
+        print(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
 
 async def main():
     async with aiohttp.ClientSession() as session:
