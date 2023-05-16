@@ -2,14 +2,16 @@ import asyncio
 import aiohttp
 import json
 import os
+import sys
+
 from dotenv import load_dotenv
 from bs4 import BeautifulSoup
 import logging
 
 load_dotenv()
 SIMPSONS_URL = os.getenv('SIMPSONS_URL')
-SIMPSONS_FILE_NAME = 'scrapper/' + os.getenv('SIMPSONS_FILE_NAME') + '.json'
-SCRAPPER_LOG = 'scrapper/' + os.getenv('SCRAPPER_LOG') + '.log'
+SIMPSONS_FILE_NAME = os.path.dirname(os.path.abspath(__file__))+'/data/' + os.getenv('SIMPSONS_FILE_NAME') + '.json'
+SCRAPPER_LOG = os.path.dirname(os.path.abspath(__file__))+'/data/' + os.getenv('SCRAPPER_LOG') + '.log'
 
 logging.basicConfig(filename= SCRAPPER_LOG, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
@@ -35,11 +37,7 @@ async def get_season_data(session, season, scrapped_episodes):
         else:
             title, date, url = None, None, None
 
-        async with session.get(url) as response:
-            check_response(response)
-            episode_web_content = await get_soup(response)
-            resume_found = episode_web_content.find(id='info').find('div').find('p')
-            resume = resume_found.text if resume_found else 'No description available' 
+        resume = await get_resume(session, url)
 
         episode_info = {
             'season': season_number,
@@ -51,6 +49,7 @@ async def get_season_data(session, season, scrapped_episodes):
         }
         scrapped_episodes.append(episode_info)
         logging.info(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
+        print(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
 
 async def main():
     async with aiohttp.ClientSession() as session:
@@ -75,6 +74,13 @@ def check_response(response):
 
 async def get_soup(response, type = 'lxml'):
     return BeautifulSoup(await response.text(), type)
+
+async def get_resume(session, url):
+    async with session.get(url) as response:
+        check_response(response)
+        episode_web_content = await get_soup(response)
+        resume_found = episode_web_content.find(id='info').find('div').find('p')
+        return resume_found.text if resume_found else 'No description available' 
 
 if __name__ == '__main__':
     asyncio.run(main())
