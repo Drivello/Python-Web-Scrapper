@@ -1,21 +1,29 @@
+from bs4 import BeautifulSoup
+from dotenv import load_dotenv
+from datetime import datetime
 import asyncio
 import aiohttp
 import json
 import os
-import sys
-
-from dotenv import load_dotenv
-from bs4 import BeautifulSoup
 import logging
 
 load_dotenv()
 SIMPSONS_URL = os.getenv('SIMPSONS_URL')
+API_POST_EPISODE_URL = os.getenv('API_POST_EPISODE_URL')
 SIMPSONS_FILE_NAME = os.path.dirname(os.path.abspath(__file__))+'/data/' + os.getenv('SIMPSONS_FILE_NAME') + '.json'
 SCRAPPER_LOG = os.path.dirname(os.path.abspath(__file__))+'/data/' + os.getenv('SCRAPPER_LOG') + '.log'
 
 logging.basicConfig(filename= SCRAPPER_LOG, level=logging.DEBUG, format='%(asctime)s %(levelname)s %(message)s')
 
-async def get_season_data(session, season, scrapped_episodes):
+original_format = '%b. %d, %Y'
+desired_format = '%Y-%m-%d'
+
+def format_date(original_date, original_format):
+    date_obj = datetime.strptime(original_date, original_format)
+    return date_obj.strftime(desired_format)
+
+
+async def get_season_data(session, season):
     season_number = season.find(class_='title').text.split(' ')[1]
     season_episodes = season.find_all('li')
 
@@ -40,14 +48,16 @@ async def get_season_data(session, season, scrapped_episodes):
         resume = await get_resume(session, url)
 
         episode_info = {
-            'season': season_number,
-            'episode': episode_number,
-            'title': title,
-            'resume': resume,
-            'date': date,
-            'url': url
+            'date': format_date(date,original_format),
+            'number': int(episode_number),
+            'season_number': int(season_number),
+            'name': title,
+            'url': url,
+            'summary': resume
         }
-        scrapped_episodes.append(episode_info)
+
+        await post_episode(session, API_POST_EPISODE_URL, episode_info)
+
         logging.info(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
         print(f"Scrapping episode {episode_number} of season {season_number} with title '{title}'")
 
@@ -58,13 +68,9 @@ async def main():
                 check_response(response)
                 main_web_content = await get_soup(response)
                 seasons_data = main_web_content.find_all(class_='se-c')
-                scrapped_episodes = []
-                coroutines = [get_season_data(session, season, scrapped_episodes) for season in seasons_data]
+                coroutines = [get_season_data(session, season) for season in seasons_data]
                 await asyncio.gather(*coroutines)
 
-                with open(SIMPSONS_FILE_NAME, 'w') as file_open:
-                    json.dump(scrapped_episodes, file_open, indent=4)
-                    logging.info(f"Data written to {SIMPSONS_FILE_NAME}")
             except Exception as e:
                 logging.error(str(e))
 
@@ -81,6 +87,11 @@ async def get_resume(session, url):
         episode_web_content = await get_soup(response)
         resume_found = episode_web_content.find(id='info').find('div').find('p')
         return resume_found.text if resume_found else 'No description available' 
+    
+async def post_episode(session, url, episode):
+    async with session.post(url, json=episode) as response: 
+        return await response.text()
+
 
 if __name__ == '__main__':
     asyncio.run(main())

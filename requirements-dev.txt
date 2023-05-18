@@ -1,3 +1,5 @@
+datetime
+load_dotenv
+bs4
+aiohttp
 pytest
-unittest
-
