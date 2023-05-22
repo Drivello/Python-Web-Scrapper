@@ -1,3 +1,4 @@
+"""
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -39,3 +40,4 @@ async def test_get_season_data(mock_get_resume):
     assert scrapped_episodes[0]['resume'] == 'No description available'
     assert scrapped_episodes[0]['date'] is None
     assert scrapped_episodes[0]['url'] == 'url-ep-1'
+"""

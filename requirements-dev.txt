@@ -3,3 +3,4 @@ load_dotenv
 bs4
 aiohttp
 pytest
+pytest-asyncio

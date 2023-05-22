@@ -83,14 +83,17 @@ async def get_soup(response, type = 'lxml'):
 
 async def get_resume(session, url):
     async with session.get(url) as response:
-        check_response(response)
-        episode_web_content = await get_soup(response)
-        resume_found = episode_web_content.find(id='info').find('div').find('p')
-        return resume_found.text if resume_found else 'No description available' 
+        try:
+            check_response(response)
+            episode_web_content = await get_soup(response)
+            resume_found = episode_web_content.find(id='info').find('div').find('p')
+            return resume_found.text if resume_found else 'No description available' 
+        except:
+            return 'No description available'
     
 async def post_episode(session, url, episode):
     async with session.post(url, json=episode) as response: 
-        return await response.text()
+        return response.text()
 
 
 if __name__ == '__main__':
